@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 Tier 3 Event Calendar</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --qiagen-blue: #004D9F;
+      --qiagen-blue-dark: #003b7a;
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --soft-blue: #eef4ff;
+      --soft-gray: #f9fafb;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrapper { max-width: 1240px; margin: 0 auto; padding: 26px; }
+    .hero {
+      background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+      border: 1px solid #dbe7ff;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+      margin-bottom: 18px;
+    }
+    .eyebrow { color: var(--qiagen-blue); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+    h1 { color: var(--qiagen-blue); margin: 0; font-size: 30px; line-height: 1.15; }
+    .subtitle { color: var(--muted); margin: 8px 0 0; font-size: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+    .stat { background: rgba(255,255,255,.78); border: 1px solid #dbe7ff; border-radius: 15px; padding: 14px; }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .stat-value { color: var(--qiagen-blue); font-size: 24px; font-weight: 800; margin-top: 4px; }
+    .filters {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.07);
+      margin: 18px 0;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-size: 12px; font-weight: 800; color: #374151; }
+    select, input {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: white;
+      color: var(--text);
+      font-size: 14px;
+    }
+    button {
+      margin-top: auto;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--qiagen-blue);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: var(--qiagen-blue-dark); }
+    .results-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 14px 0; color: var(--muted); font-size: 14px; flex-wrap: wrap; }
+    .view-note { font-size: 13px; }
+    .month-section { margin: 18px 0 26px; }
+    .month-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--qiagen-blue);
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+    .month-count { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .table-wrap {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,.05);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      background: var(--soft-gray);
+      color: #374151;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    td { padding: 13px 14px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+    tr.event-row { cursor: pointer; }
+    tr.event-row:hover { background: #fbfdff; }
+    tr:last-child td { border-bottom: 0; }
+    .date-cell { white-space: nowrap; color: var(--qiagen-blue); font-weight: 800; }
+    .event-name { font-weight: 800; color: var(--text); }
+    .tag { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; background: var(--soft-blue); color: var(--qiagen-blue); font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .muted { color: var(--muted); }
+    .details-row { display: none; background: #fbfdff; }
+    .details-row.open { display: table-row; }
+    .details-card { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 4px 0; }
+    .detail-block { border-left: 3px solid #dbe7ff; padding-left: 10px; min-height: 42px; }
+    .detail-label { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+    .detail-value { font-size: 14px; color: var(--text); line-height: 1.4; }
+    .empty-state { text-align: center; background: white; border: 1px solid var(--line); border-radius: 16px; padding: 34px; color: var(--muted); box-shadow: 0 6px 18px rgba(0,0,0,.05); }
+    .loading { text-align: center; padding: 34px; color: var(--muted); }
+    @media (max-width: 1000px) {
+      .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stats { grid-template-columns: 1fr; }
+      .details-card { grid-template-columns: 1fr; }
+      th:nth-child(5), td:nth-child(5), th:nth-child(6), td:nth-child(6) { display: none; }
+    }
+    @media (max-width: 650px) {
+      .wrapper { padding: 16px; }
+      .filters { grid-template-columns: 1fr; position: static; }
+      h1 { font-size: 24px; }
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <section class="hero">
+      <div class="eyebrow">Tier 3 Events</div>
+      <h1>2026 Event Calendar</h1>
+      <p class="subtitle">Filter by month, business area, product, presence type, and country. Click any event row to expand details.</p>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Events Shown</div><div class="stat-value" id="shownStat">—</div></div>
+        <div class="stat"><div class="stat-label">Total Events</div><div class="stat-value" id="totalStat">—</div></div>
+        <div class="stat"><div class="stat-label">Next Upcoming</div><div class="stat-value" id="nextStat">—</div></div>
+      </div>
+    </section>
+
+    <section class="filters">
+      <div class="filter-group"><label for="monthFilter">Month</label><select id="monthFilter"><option value="">All Months</option></select></div>
+      <div class="filter-group"><label for="businessFilter">Business Area</label><select id="businessFilter"><option value="">All Business Areas</option></select></div>
+      <div class="filter-group"><label for="productFilter">Product</label><select id="productFilter"><option value="">All Products</option></select></div>
+      <div class="filter-group"><label for="presenceFilter">Presence Type</label><select id="presenceFilter"><option value="">All Presence Types</option></select></div>
+      <div class="filter-group"><label for="countryFilter">Country</label><select id="countryFilter"><option value="">All Countries</option></select></div>
+      <div class="filter-group"><label for="searchInput">Search</label><input type="text" id="searchInput" placeholder="Event, location, notes..." /></div>
+      <div class="filter-group"><label>&nbsp;</label><button id="clearFilters">Clear Filters</button></div>
+    </section>
+
+    <div class="results-row">
+      <div id="resultsCount">Loading events...</div>
+      <div class="view-note">Grouped by event month • sorted by start date</div>
+    </div>
+
+    <main id="eventsContainer" class="loading">Loading events_dashboard.csv...</main>
+  </div>
+
+  <script>
+    let events = [];
+    const csvFile = "events_dashboard.csv";
+
+    const monthFilter = document.getElementById("monthFilter");
+    const businessFilter = document.getElementById("businessFilter");
+    const productFilter = document.getElementById("productFilter");
+    const presenceFilter = document.getElementById("presenceFilter");
+    const countryFilter = document.getElementById("countryFilter");
+    const searchInput = document.getElementById("searchInput");
+    const clearFiltersBtn = document.getElementById("clearFilters");
+    const eventsContainer = document.getElementById("eventsContainer");
+    const resultsCount = document.getElementById("resultsCount");
+    const shownStat = document.getElementById("shownStat");
+    const totalStat = document.getElementById("totalStat");
+    const nextStat = document.getElementById("nextStat");
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    function parseCSV(text) {
+      text = text.replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [], cell = "", insideQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i], nextChar = text[i + 1];
+        if (char === '"' && insideQuotes && nextChar === '"') { cell += '"'; i++; }
+        else if (char === '"') { insideQuotes = !insideQuotes; }
+        else if (char === "," && !insideQuotes) { row.push(cell); cell = ""; }
+        else if ((char === "\n" || char === "\r") && !insideQuotes) {
+          if (char === "\r" && nextChar === "\n") i++;
+          if (cell || row.length) { row.push(cell); rows.push(row); row = []; cell = ""; }
+        } else { cell += char; }
+      }
+      if (cell || row.length) { row.push(cell); rows.push(row); }
+      return rows;
+    }
+
+    async function loadCSV() {
+      const response = await fetch(csvFile);
+      if (!response.ok) throw new Error("CSV not found");
+      const text = await response.text();
+      const rows = parseCSV(text).filter(row => row.some(cell => String(cell).trim() !== ""));
+      const headers = rows.shift().map(header => header.trim());
+      events = rows.map(row => {
+        const event = {};
+        headers.forEach((header, index) => event[header] = row[index] ? row[index].trim() : "");
+        return event;
+      }).filter(event => event.event_name && event.start_date);
+    }
+
+    function safeText(value) {
+      return String(value || "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+    }
+
+    function dateObj(dateString) { return new Date(dateString + "T00:00:00"); }
+    function getMonthName(dateString) { return monthNames[dateObj(dateString).getMonth()]; }
+    function getMonthKey(dateString) {
+      const d = dateObj(dateString);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+    function formatShortDate(dateString) {
+      const d = dateObj(dateString);
+      return `${monthNames[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+    }
+    function formatDateRange(startDate, endDate) {
+      if (!endDate || startDate === endDate) return `${formatShortDate(startDate)}, ${dateObj(startDate).getFullYear()}`;
+      const s = dateObj(startDate), e = dateObj(endDate);
+      if (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()) return `${monthNames[s.getMonth()].slice(0,3)} ${s.getDate()}-${e.getDate()}, ${s.getFullYear()}`;
+      return `${formatShortDate(startDate)} - ${formatShortDate(endDate)}, ${s.getFullYear()}`;
+    }
+
+    function populateSelect(select, values, allLabel) {
+      select.innerHTML = `<option value="">${allLabel}</option>`;
+      values.filter(Boolean).sort((a,b) => a.localeCompare(b)).forEach(value => {
+        select.innerHTML += `<option value="${safeText(value)}">${safeText(value)}</option>`;
+      });
+    }
+
+    function populateFilters() {
+      const monthKeys = [...new Set(events.map(e => getMonthKey(e.start_date)))].sort();
+      monthFilter.innerHTML = `<option value="">All Months</option>`;
+      monthKeys.forEach(key => {
+        const firstEvent = events.find(e => getMonthKey(e.start_date) === key);
+        const label = `${getMonthName(firstEvent.start_date)} ${key.slice(0,4)}`;
+        monthFilter.innerHTML += `<option value="${key}">${label}</option>`;
+      });
+      populateSelect(businessFilter, [...new Set(events.map(e => e.business_area))], "All Business Areas");
+      populateSelect(productFilter, [...new Set(events.map(e => e.product))], "All Products");
+      populateSelect(presenceFilter, [...new Set(events.map(e => e.approved_presence_type))], "All Presence Types");
+      populateSelect(countryFilter, [...new Set(events.map(e => e.country))], "All Countries");
+    }
+
+    function filteredEvents() {
+      const selectedMonth = monthFilter.value;
+      const selectedBusiness = businessFilter.value;
+      const selectedProduct = productFilter.value;
+      const selectedPresence = presenceFilter.value;
+      const selectedCountry = countryFilter.value;
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      return events.filter(event => {
+        const searchableText = `${event.event_name} ${event.business_area} ${event.product} ${event.approved_presence_type} ${event.country} ${event.location} ${event.approx_cost} ${event.notes}`.toLowerCase();
+        return (!selectedMonth || getMonthKey(event.start_date) === selectedMonth) &&
+          (!selectedBusiness || event.business_area === selectedBusiness) &&
+          (!selectedProduct || event.product === selectedProduct) &&
+          (!selectedPresence || event.approved_presence_type === selectedPresence) &&
+          (!selectedCountry || event.country === selectedCountry) &&
+          (!searchTerm || searchableText.includes(searchTerm));
+      }).sort((a,b) => dateObj(a.start_date) - dateObj(b.start_date));
+    }
+
+    function updateStats(list) {
+      shownStat.textContent = list.length;
+      totalStat.textContent = events.length;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const next = events.filter(e => dateObj(e.start_date) >= today).sort((a,b) => dateObj(a.start_date) - dateObj(b.start_date))[0];
+      nextStat.textContent = next ? formatShortDate(next.start_date) : "—";
+      resultsCount.textContent = `${list.length} event${list.length === 1 ? "" : "s"} shown`;
+    }
+
+    function renderEvents() {
+      const list = filteredEvents();
+      updateStats(list);
+      if (!list.length) {
+        eventsContainer.className = "empty-state";
+        eventsContainer.innerHTML = "No events match the selected filters.";
+        return;
+      }
+      eventsContainer.className = "";
+      const groups = {};
+      list.forEach(event => {
+        const key = getMonthKey(event.start_date);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(event);
+      });
+      eventsContainer.innerHTML = Object.keys(groups).sort().map(key => {
+        const group = groups[key];
+        const label = `${getMonthName(group[0].start_date)} ${key.slice(0,4)}`;
+        return `
+          <section class="month-section">
+            <h2 class="month-heading">${label} <span class="month-count">${group.length} event${group.length === 1 ? "" : "s"}</span></h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Event</th><th>Business Area</th><th>Product</th><th>Presence</th><th>Location</th></tr></thead>
+                <tbody>
+                  ${group.map((event, index) => {
+                    const id = `${key}-${index}-${Math.random().toString(36).slice(2)}`;
+                    return `
+                      <tr class="event-row" data-details="${id}">
+                        <td class="date-cell">${safeText(formatDateRange(event.start_date, event.end_date))}</td>
+                        <td><div class="event-name">${safeText(event.event_name)}</div></td>
+                        <td>${event.business_area ? `<span class="tag">${safeText(event.business_area)}</span>` : `<span class="muted">—</span>`}</td>
+                        <td>${event.product ? `<span class="tag">${safeText(event.product)}</span>` : `<span class="muted">—</span>`}</td>
+                        <td>${event.approved_presence_type ? safeText(event.approved_presence_type) : `<span class="muted">—</span>`}</td>
+                        <td>${event.location ? safeText(event.location) : `<span class="muted">—</span>`}</td>
+                      </tr>
+                      <tr class="details-row" id="${id}">
+                        <td colspan="6">
+                          <div class="details-card">
+                            <div class="detail-block"><div class="detail-label">Country</div><div class="detail-value">${safeText(event.country) || "—"}</div></div>
+                            <div class="detail-block"><div class="detail-label">Approx. Cost</div><div class="detail-value">${safeText(event.approx_cost) || "—"}</div></div>
+                            <div class="detail-block"><div class="detail-label">Notes</div><div class="detail-value">${safeText(event.notes) || "—"}</div></div>
+                          </div>
+                        </td>
+                      </tr>`;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>
+          </section>`;
+      }).join("");
+      document.querySelectorAll(".event-row").forEach(row => {
+        row.addEventListener("click", () => {
+          const details = document.getElementById(row.dataset.details);
+          details.classList.toggle("open");
+        });
+      });
+    }
+
+    function clearFilters() {
+      [monthFilter, businessFilter, productFilter, presenceFilter, countryFilter].forEach(el => el.value = "");
+      searchInput.value = "";
+      renderEvents();
+    }
+
+    async function init() {
+      try {
+        await loadCSV();
+        populateFilters();
+        renderEvents();
+      } catch (error) {
+        eventsContainer.className = "empty-state";
+        eventsContainer.innerHTML = `Could not load <strong>${csvFile}</strong>. Make sure the CSV is in the same folder as this HTML file.`;
+        console.error(error);
+      }
+    }
+
+    [monthFilter, businessFilter, productFilter, presenceFilter, countryFilter].forEach(el => el.addEventListener("change", renderEvents));
+    searchInput.addEventListener("input", renderEvents);
+    clearFiltersBtn.addEventListener("click", clearFilters);
+    init();
+  </script>
+</body>
+</html>
